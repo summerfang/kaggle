@@ -11,16 +11,17 @@ import pandas as pd
 data_path = './'
 
 df_train_orginal_data = pd.read_csv(data_path + 'train.csv')
-
 df_train_removal = df_train_orginal_data.drop(['PassengerId','Name','Ticket','Cabin'], axis=1)
 df_train_dummy = pd.get_dummies(df_train_removal)
+df_train_dummy.corr()
 
-X = df_train_dummy.drop(['Survived'], axis=1)
+X = df_train_dummy.drop(['Survived'], axis=1).fillna(0)
 y = df_train_dummy['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25)
 
 df_submission = pd.read_csv(data_path + 'test.csv').drop(['PassengerId','Name','Ticket','Cabin'], axis=1)
-df_submission_dummy = pd.get_dummies(df_submission)
+df_submission_dummy = pd.get_dummies(df_submission).fillna(0)
+df_submission_dummy
 
 ID = pd.read_csv(data_path + 'test.csv')['PassengerId']
 
@@ -48,4 +49,18 @@ submissioin_pred = xgb_classifer.predict(df_submission_dummy)
 
 submission = pd.concat([pd.DataFrame(ID), pd.DataFrame(submissioin_pred)], axis=1)
 submission.columns = ['PassengerId','Survived']
-submission.to_csv('submission.csv', index=False)
+submission.to_csv('submission_xgb.csv', index=False)
+
+
+# RandomForest
+from sklearn.ensemble import RandomForestClassifier
+rf = RandomForestClassifier(max_depth=10)
+rf.fit(X_train, y_train)
+y_pred = rf.predict(X_test)
+print('RandomForest score: {}'.format(accuracy_score(y_test, y_pred)))
+
+submissioin_pred = rf.predict(df_submission_dummy)
+
+submission = pd.concat([pd.DataFrame(ID), pd.DataFrame(submissioin_pred)], axis=1)
+submission.columns = ['PassengerId','Survived']
+submission.to_csv('submission_rf.csv', index=False)
